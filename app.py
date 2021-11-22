@@ -21,6 +21,10 @@ app = Flask(__name__, root_path=util.ROOT_DIR)
 def home():
     return flask.render_template('index.html')
 
+@app.route('/piece', methods=['get'])
+def piece():
+    return flask.render_template('piece.html')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Launch Espeon server.')

@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<p>Espeon is cool, here is a piece</p>
+
+<div id="main-container"></div>
+{% endblock %}
+
+{% block script %}
+<!-- pdf.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+<!-- custom js -->
+<script type="text/javascript">
+$(document).ready(function() {
+  // Container of all canvas objects
+  const container = document.getElementById('main-container');
+
+  // Increase resolution by this factor
+  const RESOLUTION_MULTIPLIER = 2.0;
+
+  // If absolute URL from the remote server is provided, configure the CORS
+  // header on that server.
+  var url = 'https://arxiv.org/pdf/2104.06644.pdf';
+
+	// Loaded via <script> tag, create shortcut to access PDF.js exports.
+	var pdfjsLib = window['pdfjs-dist/build/pdf'];
+
+	// The workerSrc property shall be specified.
+	pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+
+	// Using DocumentInitParameters object to load binary data.
+	var loadingTask = pdfjsLib.getDocument(url);
+	loadingTask.promise.then(function(pdf) {
+		console.log('PDF loaded');
+		
+    for (var num = 1; num <= pdf.numPages; num++) {
+      pdf.getPage(num).then(function(page) {
+        console.log('Page loaded');
+        
+        var viewport = page.getViewport({scale: 1});
+        var scale = container.offsetWidth / viewport.width;
+        console.log(scale)
+        var viewport = page.getViewport({scale: scale});
+
+        // Prepare canvas using PDF page dimensions
+        var canvas = document.createElement('CANVAS');
+        var context = canvas.getContext('2d');
+        container.appendChild(canvas);
+        canvas.height = viewport.height * RESOLUTION_MULTIPLIER;
+        canvas.width = viewport.width * RESOLUTION_MULTIPLIER;
+        canvas.style.height = viewport.height + 'px';
+        canvas.style.width = viewport.width + 'px';
+        var transform = [RESOLUTION_MULTIPLIER, 0, 0, RESOLUTION_MULTIPLIER, 0, 0];
+
+        // Render PDF page into canvas context
+        var renderContext = {
+          canvasContext: context,
+          viewport: viewport,
+          transform: transform
+        };
+        var renderTask = page.render(renderContext);
+        renderTask.promise.then(function () {
+          console.log('Page rendered');
+        });
+      });
+    }
+	}, function (reason) {
+		// PDF loading error
+		console.error(reason);
+	});
+});
+</script>
+{% endblock %}

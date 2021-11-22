@@ -4,9 +4,10 @@ html {
 
 body {
     background-image: linear-gradient(to right, #ffd0ff, #bf90bf);
-    min-height: 100%;
+    overflow-x: hidden;  /* Hide horizontal scrollbar that appears due to vertical scrollbar taking up space */
 }
 
 main {
-    padding: 0.5rem 1.25rem;
+    padding-top: 1.25rem;
+    padding-bottom: 0;
 }
