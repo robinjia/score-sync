@@ -5,9 +5,56 @@
 {% endblock %}
 
 {% block script %}
+<!-- WebMIDIAPI -->
+<script src="{{ url_for('static', filename='WebMIDIAPI.min.js') }}"></script>
+
 <script type="text/javascript">
+// MIDI message types
+var MIDI_NOTE_OFF = 128;
+var MIDI_NOTE_ON = 144;
+var MIDI_ACTIVE_SENSING = 254;
+
 $(document).ready(function() {
-    console.log('Umbreon')
+  var midi = null;
+
+  navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIError);
+
+	function onMIDISuccess(access) {
+    // If the browser supports WebMIDI, access is a native MIDIAccess
+    // object. If not, it is an instance of a custom class that mimics
+    // the behavior of MIDIAccess using Jazz.
+    midi = access;
+
+    // inputs = MIDIInputMaps, you can retrieve the inputs with iterators
+    var inputs = midi.inputs;
+
+    // returns an iterator that loops over all inputs
+    var iteratorInputs = inputs.values()
+
+    // get the first input
+    var input = iteratorInputs.next().value
+
+    // onmidimessage(event), event.data & event.receivedTime are populated
+    input.onmidimessage = handleMIDIMessage;
+	};
+
+	function handleMIDIMessage(event) {
+    switch (event.data[0]) {
+      case MIDI_NOTE_OFF:
+        console.log('Note OFF: note=' + event.data[1] + ', velocity=' + event.data[2] + ', time=' + event.timestamp);
+      case MIDI_NOTE_ON:
+        console.log('Note ON: note=' + event.data[1] + ', velocity=' + event.data[2] + ', time=' + event.timestamp);
+      case MIDI_ACTIVE_SENSING:
+        break;
+      default:
+        console.log('Unknown message: ' + event.data);
+        break;
+    }
+	};
+
+	function onMIDIError(err) {
+    console.log('uh-oh! Something went wrong! Error code: ' + err.code);
+	};
 });
 </script>
 {% endblock %}
