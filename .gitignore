@@ -1,23 +1,4 @@
-#Compiled files
-*.jar
-*.o
 *.pyc
-
-# LaTeX/BibTex
-*.aux
-*.bbl
-*.blg
-*.log
-*.out
-*.pdf
-
-# Swap files
 *.sw*
-
-# Temporary files
-tmp*
-*.tmp
-
-# Zip files
-*.gz
-*.zip
+config.yaml
+*.db

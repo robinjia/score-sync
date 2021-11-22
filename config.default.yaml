@@ -1,0 +1,4 @@
+# This is the default YAML configuration file
+# Copy this to config.yaml and edit accordingly.
+db_file: default.db  # Path to SQLite3 DB
+secret_key: KEY  # Secret key for flask; run ./gen-secret-key and copy result here
