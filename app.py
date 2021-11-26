@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Espeon: Synchronize sheet music with MIDI."""
+"""Synchronize sheet music with MIDI."""
 import argparse
 from datetime import datetime
 import flask
@@ -88,7 +88,7 @@ def play(piece_id):
     return flask.render_template('play.html', piece=piece, score_times=score_times)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Launch Espeon server.')
+    parser = argparse.ArgumentParser('Launch server.')
     parser.add_argument('--hostname', '-n', default='0.0.0.0')
     parser.add_argument('--port', '-p', type=int, default=8196)
     parser.add_argument('--debug', '-d', action='store_true')
