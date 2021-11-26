@@ -18,7 +18,7 @@
 
 <script type="text/javascript">
 $(document).ready(function() {
-    var container = document.getElementById('pdf-container');  // Container of all canvas objects
+    var container = document.getElementById('main-container');  // Container of all pages
     var image_manager = new ImageManager(container);
 
     var midi_url = "{{ url_for('get_midi', piece_id=piece.id) }}";
