@@ -34,7 +34,7 @@ PdfManager.prototype.init = function() {
   var pdfjsLib = window['pdfjs-dist/build/pdf'];
 
   // The workerSrc property shall be specified.
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
 
   // Using DocumentInitParameters object to load binary data.
   var loadingTask = pdfjsLib.getDocument(this.pdf_url);
