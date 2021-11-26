@@ -5,7 +5,9 @@ from datetime import datetime
 import flask
 from flask import Flask, request, session
 from flask_sqlalchemy import SQLAlchemy
+import io
 import json
+from pdf2image import convert_from_bytes
 import re
 import sys
 import urllib
@@ -29,6 +31,15 @@ class Piece(db.Model):
     midi = db.Column(db.LargeBinary())
     score_times_json = db.Column(db.String(1024))
     date_added = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    page_images = db.relationship('PageImage', backref='piece', lazy=True)
+
+class PageImage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    piece_id = db.Column(db.Integer, db.ForeignKey('piece.id'), nullable=False)
+    page_number = db.Column(db.Integer, nullable=False)
+    width = db.Column(db.Integer, nullable=False)
+    height = db.Column(db.Integer, nullable=False)
+    png = db.Column(db.LargeBinary())
 
 @app.route('/', methods=['get'])
 def home():
@@ -39,6 +50,8 @@ def post_add_piece():
     name = flask.request.form['name']
     composer = flask.request.form['composer']
     pdf_url = flask.request.form['pdf_url']
+
+    # Create Piece
     with urllib.request.urlopen(pdf_url) as f:
         pdf = f.read()
     midi_url = flask.request.form['midi_url']
@@ -48,6 +61,17 @@ def post_add_piece():
                   midi_url=midi_url, midi=midi)
     db.session.add(piece)
     db.session.commit()
+
+    # Create PageImage's for the piece
+    images = convert_from_bytes(pdf, dpi=100)  # dpi=100 to be safe regarding iOS limitations
+    for page_num, image in enumerate(images):
+        byte_array = io.BytesIO()
+        image.save(byte_array, format='png')
+        page_image = PageImage(piece_id=piece.id, page_number=page_num, 
+                               width=image.width, height=image.height,
+                               png=byte_array.getvalue())
+        db.session.add(page_image)
+    db.session.commit()
     return flask.redirect(f'/align/{piece.id}')
 
 @app.route('/pdf/<piece_id>.pdf', methods=['get'])
@@ -55,6 +79,19 @@ def get_pdf(piece_id):
     piece = Piece.query.get(piece_id)
     response = flask.make_response(piece.pdf)
     response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'inline'
+    return response
+
+@app.route('/images/<piece_id>_<page_num>.png', methods=['get'])
+def get_png(piece_id, page_num):
+    piece = Piece.query.get(piece_id)
+    page_num = int(page_num)
+    page_images = [x for x in piece.page_images if x.page_number == page_num]
+    if not page_images:
+        flask.abort(404)
+    page_image = page_images[0]
+    response = flask.make_response(page_image.png)
+    response.headers['Content-Type'] = 'image/png'
     response.headers['Content-Disposition'] = 'inline'
     return response
 

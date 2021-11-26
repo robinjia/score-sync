@@ -1,7 +1,8 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div id="pdf-container"></div>
+
+{% include 'main_container.html' %}
 
 {% endblock %}
 
@@ -21,13 +22,11 @@
 <script type="text/javascript">
 $(document).ready(function() {
     var container = document.getElementById('pdf-container');  // Container of all canvas objects
-    var pdf_url = "{{ url_for('get_pdf', piece_id=piece.id) }}";
-    var pdf_manager = new PdfManager(container, pdf_url);
+    var image_manager = new ImageManager(container);
 
     var midi_url = "{{ url_for('get_midi', piece_id=piece.id) }}";
     var score_times = {{ score_times | tojson | safe }};
-    console.log(score_times);
-    var sync_manager = new SyncManager(pdf_manager, midi_url, score_times)
+    var sync_manager = new SyncManager(image_manager, midi_url, score_times)
     sync_manager.init();
 });
 </script>

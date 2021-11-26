@@ -1,0 +1,10 @@
+<div id="main-container">
+  {% for image in piece.page_images %}
+  <div class="page-div">
+    <img src="{{ url_for('get_png', piece_id=piece.id, page_num=image.page_number) }}" width="{{image.width}}" height="{{image.height}}">
+    <svg class="page-svg" width="{{image.width}}" height="{{image.height}}">
+      <rect x="0" y="0" fill="blue" opacity="0.0" width="{{image.width}}" height="0" />
+    </svg>
+  </div>
+  {% endfor %}
+</div>

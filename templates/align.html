@@ -11,7 +11,7 @@
     </form>
 </div>
 
-<div id="pdf-container"></div>
+{% include 'main_container.html' %}
 
 {% endblock %}
 
@@ -26,12 +26,12 @@
 <script src="{{ url_for('static', filename='piece.js') }}"></script>
 <script type="text/javascript">
 $(document).ready(function() {
-    var container = document.getElementById('pdf-container');  // Container of all canvas objects
-    var pdf_url = "{{ url_for('get_pdf', piece_id=piece.id) }}";
-    var pdf_manager = new PdfManager(container, pdf_url);
+    var container = document.getElementById('main-container');  // Container of all pages
+    var image_manager = new ImageManager(container);
+
     var midi_player = document.getElementById('midi-player');
     var form_element = document.getElementById('score_times');
-    var score_times_manager = new ScoreTimesManager(midi_player, pdf_manager, form_element)
+    var score_times_manager = new ScoreTimesManager(midi_player, image_manager, form_element)
     score_times_manager.init();
 });
 </script>

@@ -28,10 +28,6 @@ main {
     position: relative;
 }
 
-.page-canvas {
-
-}
-
 .page-svg {
     position: absolute;
     left: 0px;

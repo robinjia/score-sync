@@ -12,107 +12,41 @@ const MIDI_NOTE_OFF = 128;
 const MIDI_NOTE_ON = 144;
 const MIDI_ACTIVE_SENSING = 254;
 
-function Page(div, canvas, rect) {
+function Page(div, img, rect) {
   this.div = div;  // Containing div for every page
-  this.canvas = canvas;  // Canvas that contains pdf
+  this.img = img;  // img element containing page image
   this.rect = rect;  // rect that shows highlights
 }
 
-function PdfManager(container, pdf_url) {
-  /* class that manages rendering pdf and drawing on the pdf */
+function ImageManager(container) {
   this.container = container;
-  this.pdf_url = pdf_url;
-  this.RESOLUTION_MULTIPLIER = 2.0;  // Increase resolution by this factor
-  this.bar_height = 0.2;  // Height of a bar in fraction of page
-  this.pages = [];  // Array containing Page objects
+  this.bar_height = 0.2 // Height of a bar in fraction of page
+  this.pages = [];  // List of Page objects
 }
 
-PdfManager.prototype.init = function() {
-  var obj = this;
-
-  // Loaded via <script> tag, create shortcut to access PDF.js exports.
-  var pdfjsLib = window['pdfjs-dist/build/pdf'];
-
-  // The workerSrc property shall be specified.
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
-
-  // Using DocumentInitParameters object to load binary data.
-  var loadingTask = pdfjsLib.getDocument(this.pdf_url);
-  return loadingTask.promise.then(function(pdf) {
-    console.log('PDF loaded');
-    
-    for (let num = 1; num <= pdf.numPages; num++) {
-      // Set up canvas and parent div
-      let page_div = document.createElement('div');
-      page_div.classList.add('page-div');
-      let canvas = document.createElement('canvas');
-      canvas.classList.add('page-canvas');
-      page_div.appendChild(canvas);
-      obj.container.appendChild(page_div);
-
-      // Set up svg and store page_obj
-      let svg = document.createElementNS(SVGNS, 'svg');
-      svg.classList.add('page-svg');
-      let rect = document.createElementNS(SVGNS, 'rect');
-      rect.setAttributeNS(null, 'x', 0);
-      rect.setAttributeNS(null, 'y', 0);
-      rect.setAttributeNS(null, 'fill', 'blue');
-      rect.setAttributeNS(null, 'opacity', '0.0');
-      svg.appendChild(rect);
-      page_div.appendChild(svg);
-      let page_obj = new Page(page_div, canvas, rect);
-      obj.pages.push(page_obj);
-
-      pdf.getPage(num).then(function(page) {
-        console.log('Page loaded');
-        
-        var viewport = page.getViewport({scale: 1});
-        var scale = obj.container.offsetWidth / viewport.width;
-        console.log(scale)
-        var viewport = page.getViewport({scale: scale});
-
-        // Prepare canvas using PDF page dimensions
-        var context = canvas.getContext('2d');
-        canvas.height = viewport.height * obj.RESOLUTION_MULTIPLIER;
-        canvas.width = viewport.width * obj.RESOLUTION_MULTIPLIER;
-        canvas.style.height = viewport.height + 'px';
-        canvas.style.width = viewport.width + 'px';
-        var transform = [obj.RESOLUTION_MULTIPLIER, 0, 0, obj.RESOLUTION_MULTIPLIER, 0, 0];
-
-        // Set up svg to match canvas
-        svg.setAttributeNS(null, 'width', canvas.offsetWidth);
-        svg.setAttributeNS(null, 'height', canvas.offsetHeight);
-        rect.setAttributeNS(null, 'width', canvas.offsetWidth);
-        rect.setAttributeNS(null, 'height', obj.bar_height * canvas.offsetHeight);
-
-        // Render PDF page into canvas context
-        var renderContext = {
-          canvasContext: context,
-          viewport: viewport,
-          transform: transform
-        };
-        var renderTask = page.render(renderContext);
-        renderTask.promise.then(function () {
-          console.log('Page rendered');
-        });
-      });
-    }
-  }, function (reason) {
-    // PDF loading error
-    console.error(reason);
-  });
+ImageManager.prototype.init = function() {
+  console.log(this.container);
+  for (var i = 0; i < this.container.children.length; i++) {
+    var page_div = this.container.children[i]
+    var img = page_div.children[0];
+    var svg = page_div.children[1];
+    var rect = svg.children[0];
+    rect.setAttributeNS(null, 'height', this.bar_height * page_div.offsetHeight);
+    var page_obj = new Page(page_div, img, rect);
+    this.pages.push(page_obj);
+  }
 }
 
-PdfManager.prototype.show_rect = function(page_obj, y) {
+ImageManager.prototype.show_rect = function(page_obj, y) {
   page_obj.rect.setAttributeNS(null, 'y', page_obj.div.offsetHeight * (y - this.bar_height / 2));
   page_obj.rect.setAttributeNS(null, 'opacity', '0.2');
 }
 
-PdfManager.prototype.hide_rect = function(page_obj) {
+ImageManager.prototype.hide_rect = function(page_obj) {
   page_obj.rect.setAttributeNS(null, 'opacity', '0.0');
 }
 
-PdfManager.prototype.set_focus = function(page_num, y) {
+ImageManager.prototype.set_focus = function(page_num, y) {
   for (var i = 0; i < this.pages.length; i++) {
     if (i == page_num) {
       this.show_rect(this.pages[i], y);
@@ -126,10 +60,10 @@ PdfManager.prototype.set_focus = function(page_num, y) {
   }
 }
 
-function ScoreTimesManager(midi_player, pdf_manager, form_element) {
+function ScoreTimesManager(midi_player, image_manager, form_element) {
   /* Class that handles aligning lines in score with times in reference MIDI */
   this.midi_player = midi_player;
-  this.pdf_manager = pdf_manager;
+  this.image_manager = image_manager;
   this.form_element = form_element;
   this.score_times = [];  // List of objects aligning score positions to times in reference MIDI
   this.cur_page = 0;  // Current page being focused on
@@ -138,45 +72,46 @@ function ScoreTimesManager(midi_player, pdf_manager, form_element) {
 
 ScoreTimesManager.prototype.init = function() {
   var obj = this;
-  this.pdf_manager.init().then(function() {
-    for (let i = 0; i < obj.pdf_manager.pages.length; i++) {
-      let page_obj = obj.pdf_manager.pages[i];
-      console.log(page_obj);
+  this.image_manager.init();
+  console.log(this.image_manager.pages);
 
-      // Move the highlight rectangle to follow the mouse
-      page_obj.div.onmousemove = function(e) {
-        var y = (e.pageY - this.offsetTop) / this.offsetHeight;
-        obj.pdf_manager.show_rect(page_obj, y);
-        obj.cur_page = i;
-        obj.cur_y = y;
-      };
+  for (let i = 0; i < this.image_manager.pages.length; i++) {
+    let page_obj = this.image_manager.pages[i];
+    console.log(page_obj);
 
-      // Hide the highlight rectangle
-      page_obj.div.onmouseout = function() {
-        obj.pdf_manager.hide_rect(page_obj);
-      };
+    // Move the highlight rectangle to follow the mouse
+    page_obj.div.onmousemove = function(e) {
+      var y = (e.pageY - this.offsetTop) / this.offsetHeight;
+      obj.image_manager.show_rect(page_obj, y);
+      obj.cur_page = i;
+      obj.cur_y = y;
+    };
 
-      // Start playing and record alignment
-      page_obj.div.onclick = function() {
-        if (! obj.midi_player.playing) {
-          obj.midi_player.start();
-        }
-        var cur_position = {
-          time: obj.midi_player.currentTime,
-          page: obj.cur_page,
-          y: obj.cur_y,
-        };
-        obj.score_times.push(cur_position);
-        obj.form_element.value = JSON.stringify(obj.score_times);
-        console.log(obj.form_element.value);
+    // Hide the highlight rectangle
+    page_obj.div.onmouseout = function() {
+      obj.image_manager.hide_rect(page_obj);
+    };
+
+    // Start playing and record alignment
+    page_obj.div.onclick = function() {
+      if (! obj.midi_player.playing) {
+        obj.midi_player.start();
       }
+      var cur_position = {
+        time: obj.midi_player.currentTime,
+        page: obj.cur_page,
+        y: obj.cur_y,
+      };
+      obj.score_times.push(cur_position);
+      obj.form_element.value = JSON.stringify(obj.score_times);
+      console.log(obj.form_element.value);
     }
-  });
+  }
 }
 
-function SyncManager(pdf_manager, midi_url, score_times) {
+function SyncManager(image_manager, midi_url, score_times) {
   /* Class that handles synchronizing score with MIDI input */
-  this.pdf_manager = pdf_manager;
+  this.image_manager = image_manager;
   this.midi_url = midi_url;
   this.score_times = score_times;
   this.reference_notes = [];
@@ -186,51 +121,46 @@ function SyncManager(pdf_manager, midi_url, score_times) {
 SyncManager.prototype.init = function() {
   var obj = this;
 
-  this.pdf_manager.init().then(function() {
-    // Read MIDI reference file
-    core.urlToNoteSequence(obj.midi_url).then(function(note_sequence) {
-      for (var i = 0; i < note_sequence.notes.length; i++) {
-        var full_note = note_sequence.notes[i];
-        var note = {
-          start: full_note.startTime,
-          pitch: full_note.pitch,
-          nearby_pitches: new Set(),
-        }
-        note.nearby_pitches.add(note.pitch);
-        obj.reference_notes.push(note);
+  // Read MIDI reference file
+  core.urlToNoteSequence(obj.midi_url).then(function(note_sequence) {
+    for (var i = 0; i < note_sequence.notes.length; i++) {
+      var full_note = note_sequence.notes[i];
+      var note = {
+        start: full_note.startTime,
+        pitch: full_note.pitch,
+        nearby_pitches: new Set(),
       }
-      obj.reference_notes.sort(function(a, b) { return a.start - b.start})  // Sort just in case it's not sorted
+      note.nearby_pitches.add(note.pitch);
+      obj.reference_notes.push(note);
+    }
+    obj.reference_notes.sort(function(a, b) { return a.start - b.start})  // Sort just in case it's not sorted
 
-      // Compute nearby pitches for each note (pitches whose onset is almost at same time)
-      for (var i = 0; i < obj.reference_notes.length; i++) {
-        var note = obj.reference_notes[i];
+    // Compute nearby pitches for each note (pitches whose onset is almost at same time)
+    for (var i = 0; i < obj.reference_notes.length; i++) {
+      var note = obj.reference_notes[i];
 
-        // Go forward in notes while within NOTE_ONSET_TOLERANCE
-        var j_plus = i+1;
-        while (j_plus < obj.reference_notes.length) {
-          next_note = obj.reference_notes[j_plus];
-          if (next_note.start - note.start > NOTE_ONSET_TOLERANCE) {
-            break;
-          }
-          note.nearby_pitches.add(next_note.pitch);
-          j_plus++;
+      // Go forward in notes while within NOTE_ONSET_TOLERANCE
+      var j_plus = i+1;
+      while (j_plus < obj.reference_notes.length) {
+        next_note = obj.reference_notes[j_plus];
+        if (next_note.start - note.start > NOTE_ONSET_TOLERANCE) {
+          break;
         }
-
-        // Go backwards in notes while within NOTE_ONSET_TOLERANCE
-        var j_minus = i-1;
-        while (j_minus >= 0) {
-          prev_note = obj.reference_notes[j_minus];
-          if (note.start - prev_note.start > NOTE_ONSET_TOLERANCE) {
-            break;
-          }
-          note.nearby_pitches.add(prev_note.pitch);
-          j_minus--;
-        }
+        note.nearby_pitches.add(next_note.pitch);
+        j_plus++;
       }
 
-
-
-    });
+      // Go backwards in notes while within NOTE_ONSET_TOLERANCE
+      var j_minus = i-1;
+      while (j_minus >= 0) {
+        prev_note = obj.reference_notes[j_minus];
+        if (note.start - prev_note.start > NOTE_ONSET_TOLERANCE) {
+          break;
+        }
+        note.nearby_pitches.add(prev_note.pitch);
+        j_minus--;
+      }
+    }
     
     // Set up MIDI navigator to take MIDI input
     navigator.requestMIDIAccess().then(
@@ -319,5 +249,5 @@ SyncManager.prototype.on_midi_message = function(event) {
   console.log(est_position);
 
   // Update the UI
-  this.pdf_manager.set_focus(est_position.page, est_position.y);
+  this.image_manager.set_focus(est_position.page, est_position.y);
 }
