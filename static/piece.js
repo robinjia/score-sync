@@ -173,7 +173,7 @@ SyncManager.prototype.init = function() {
         input.onmidimessage = function(event) { obj.on_midi_message(event); }
       }, 
       function(error){
-        console.log('MIDI Error, Error code: ' + err.code);
+        console.log('MIDI Error, Error code: ' + error.code);
       });
   });
 }
