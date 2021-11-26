@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="header">
+    <h3>{{piece.name}} &mdash; {{piece.composer}}</h3>
+    <midi-player src="{{ url_for('get_midi', piece_id=piece.id) }}" sound-font id='midi-player'></midi-player>
+    <form action="/post_align" method="post">
+        <input type="hidden" name="piece_id" value="{{piece.id}}">
+        <input type="hidden" name="score_times" id="score_times">
+        <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+</div>
+
+<div id="pdf-container"></div>
+
+{% endblock %}
+
+{% block script %}
+<!-- pdf.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+
+<!-- html-midi-player -->
+<script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.4.0"></script>
+
+<!-- custom js -->
+<script src="{{ url_for('static', filename='piece.js') }}"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    var container = document.getElementById('pdf-container');  // Container of all canvas objects
+    var pdf_url = "{{ url_for('get_pdf', piece_id=piece.id) }}";
+    var pdf_manager = new PdfManager(container, pdf_url);
+    var midi_player = document.getElementById('midi-player');
+    var form_element = document.getElementById('score_times');
+    var score_times_manager = new ScoreTimesManager(midi_player, pdf_manager, form_element)
+    score_times_manager.init();
+});
+</script>
+{% endblock %}

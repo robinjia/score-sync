@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div id="pdf-container"></div>
+
+{% endblock %}
+
+{% block script %}
+<!-- pdf.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+
+<!-- magenta-js -->
+<script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.0.0/es6/core.js"></script>
+
+<!-- WebMIDIAPI (https://github.com/cwilso/WebMIDIAPIShim) -->
+<script src="{{ url_for('static', filename='WebMIDIAPI.min.js') }}"></script>
+
+<!-- custom js -->
+<script src="{{ url_for('static', filename='piece.js') }}"></script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+    var container = document.getElementById('pdf-container');  // Container of all canvas objects
+    var pdf_url = "{{ url_for('get_pdf', piece_id=piece.id) }}";
+    var pdf_manager = new PdfManager(container, pdf_url);
+
+    var midi_url = "{{ url_for('get_midi', piece_id=piece.id) }}";
+    var score_times = {{ score_times | tojson | safe }};
+    console.log(score_times);
+    var sync_manager = new SyncManager(pdf_manager, midi_url, score_times)
+    sync_manager.init();
+});
+</script>
+{% endblock %}

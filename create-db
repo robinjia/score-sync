@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+from datetime import datetime
+import pytz
+
+from app import db, Piece
+
+db.create_all()
+#p1 = Piece(
+#    name='Nocturnes Op. 62',
+#    composer='Frederic Chopin',
+#    pdf_url='https://s9.imslp.org/files/imglnks/usimg/0/03/IMSLP112746-PMLP02310-FChopin_Nocturnes,_Op.62_Scholtz_3vol_1905rev.pdf',
+#    midi_url='https://www.midiworld.com/midis/other/chopin/chno6201.mid',
+#    pdf=b'',
+#    midi=b''
+#)
+#db.session.add(p1)
+
+db.session.commit()

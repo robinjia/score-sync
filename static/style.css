@@ -4,10 +4,37 @@ html {
 
 body {
     background-image: linear-gradient(to right, #ffd0ff, #bf90bf);
-    overflow-x: hidden;  /* Hide horizontal scrollbar that appears due to vertical scrollbar taking up space */
+    /*overflow-x: hidden;  /* Hide horizontal scrollbar that appears due to vertical scrollbar taking up space */
 }
 
 main {
     padding-top: 1.25rem;
     padding-bottom: 0;
+}
+
+.header {
+    padding: 0.5rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-image: inherit;
+}
+
+#pdf-container {
+    background-color: black;
+}
+
+.page-div {
+    position: relative;
+}
+
+.page-canvas {
+
+}
+
+.page-svg {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: 2;
 }
