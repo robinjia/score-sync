@@ -120,6 +120,7 @@ function SyncManager(image_manager, midi_url, score_times) {
 
 SyncManager.prototype.init = function() {
   var obj = this;
+  this.image_manager.init();
 
   // Read MIDI reference file
   core.urlToNoteSequence(obj.midi_url).then(function(note_sequence) {
